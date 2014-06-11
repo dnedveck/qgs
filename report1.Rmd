@@ -39,11 +39,12 @@ So, apparently I can set something as a date, and then use te format function to
 since my times don't span over a day, I only need to worry about one of the dates in my `gleeo` data frame
 
 ```{r}
-gleeo$week <- format(as.Date(gleeo$Start.Date), "%U")
+gleeo.df$week <- format(as.Date(gleeo$Start.Date), "%U")
 ```
 
 ### Day length in clocktime
 
+I want to add in two parts to clock time, the time that I was there in the day, and then later I'm going to calculate the "unaccounted for time", which is the total gleeo.duration in the day - the total clock time for the day. 
 
 ### Personal Time
 I've got a lot of personal time tracked, and I don't really care how much time I spent taking naps, lunches, or breaks.... only that later it is going to play a role in how I will quantify how much time I tracked during the day, and how much I didn't = the time that I wasted and was not productive.
@@ -54,11 +55,11 @@ I've got a lot of personal time tracked, and I don't really care how much time I
 ## dicking around with dplyr
 
 ```{r}
-gleeo_df <- tbl_df(gleeo)
+gleeo_df <- tbl_df(gleeo.df)
 gleeo_df <- mutate(gleeo_df, 
        hrDuration = Duration / 60)
 
-projects <- group_by(x=gleeo, Project)
+projects <- group_by(x=gleeo.df, Project)
 time <- summarize(projects, timetot = sum(Decimal.Duration))
 arrange(time, desc(timetot))
 ```

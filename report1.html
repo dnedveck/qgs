@@ -219,7 +219,7 @@ format(as.Date(&quot;2014-06-8&quot;), &quot;%U&quot;)
 
 <p>since my times don&#39;t span over a day, I only need to worry about one of the dates in my <code>gleeo</code> data frame</p>
 
-<pre><code class="r">gleeo$week &lt;- format(as.Date(gleeo$Start.Date), &quot;%U&quot;)
+<pre><code class="r">gleeo.df$week &lt;- format(as.Date(gleeo$Start.Date), &quot;%U&quot;)
 </code></pre>
 
 <pre><code>## Error: object &#39;gleeo&#39; not found
@@ -227,42 +227,44 @@ format(as.Date(&quot;2014-06-8&quot;), &quot;%U&quot;)
 
 <h3>Day length in clocktime</h3>
 
+<p>I want to add in two parts to clock time, the time that I was there in the day, and then later I&#39;m going to calculate the &ldquo;unaccounted for time&rdquo;, which is the total gleeo.duration in the day - the total clock time for the day. </p>
+
 <h3>Personal Time</h3>
 
 <p>I&#39;ve got a lot of personal time tracked, and I don&#39;t really care how much time I spent taking naps, lunches, or breaks&hellip;. only that later it is going to play a role in how I will quantify how much time I tracked during the day, and how much I didn&#39;t = the time that I wasted and was not productive.</p>
 
 <h2>dicking around with dplyr</h2>
 
-<pre><code class="r">gleeo_df &lt;- tbl_df(gleeo)
+<pre><code class="r">gleeo_df &lt;- tbl_df(gleeo.df)
+gleeo_df &lt;- mutate(gleeo_df, hrDuration = Duration/60)
 </code></pre>
 
-<pre><code>## Error: object &#39;gleeo&#39; not found
-</code></pre>
-
-<pre><code class="r">gleeo_df &lt;- mutate(gleeo_df, hrDuration = Duration/60)
-</code></pre>
-
-<pre><code>## Error: object &#39;gleeo_df&#39; not found
+<pre><code>## Error: non-numeric argument to binary operator
 </code></pre>
 
 <pre><code class="r">
-projects &lt;- group_by(x = gleeo, Project)
+projects &lt;- group_by(x = gleeo.df, Project)
+time &lt;- summarize(projects, timetot = sum(Decimal.Duration))
+arrange(time, desc(timetot))
 </code></pre>
 
-<pre><code>## Error: object &#39;gleeo&#39; not found
-</code></pre>
-
-<pre><code class="r">time &lt;- summarize(projects, timetot = sum(Decimal.Duration))
-</code></pre>
-
-<pre><code>## Error: object &#39;projects&#39; not found
-</code></pre>
-
-<pre><code class="r">arrange(time, desc(timetot))
-</code></pre>
-
-<pre><code>## Error: no applicable method for &#39;arrange&#39; applied to an object of class
-## &quot;function&quot;
+<pre><code>## Source: local data frame [14 x 2]
+## 
+##     Project timetot
+## 1    thesis  56.817
+## 2  personal  56.100
+## 3   general  48.033
+## 4   saponin  45.433
+## 5   reading  40.117
+## 6  outreach  39.450
+## 7   meeting  32.583
+## 8   rhizpop  20.017
+## 9   hacking  15.683
+## 10 teaching  15.650
+## 11  seminar  14.083
+## 12  funding   8.883
+## 13 planning   7.400
+## 14    study   0.750
 </code></pre>
 
 </body>

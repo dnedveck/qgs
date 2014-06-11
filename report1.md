@@ -58,7 +58,7 @@ since my times don't span over a day, I only need to worry about one of the date
 
 
 ```r
-gleeo$week <- format(as.Date(gleeo$Start.Date), "%U")
+gleeo.df$week <- format(as.Date(gleeo$Start.Date), "%U")
 ```
 
 ```
@@ -68,6 +68,7 @@ gleeo$week <- format(as.Date(gleeo$Start.Date), "%U")
 
 ### Day length in clocktime
 
+I want to add in two parts to clock time, the time that I was there in the day, and then later I'm going to calculate the "unaccounted for time", which is the total gleeo.duration in the day - the total clock time for the day. 
 
 ### Personal Time
 I've got a lot of personal time tracked, and I don't really care how much time I spent taking naps, lunches, or breaks.... only that later it is going to play a role in how I will quantify how much time I tracked during the day, and how much I didn't = the time that I wasted and was not productive.
@@ -79,44 +80,38 @@ I've got a lot of personal time tracked, and I don't really care how much time I
 
 
 ```r
-gleeo_df <- tbl_df(gleeo)
-```
-
-```
-## Error: object 'gleeo' not found
-```
-
-```r
+gleeo_df <- tbl_df(gleeo.df)
 gleeo_df <- mutate(gleeo_df, hrDuration = Duration/60)
 ```
 
 ```
-## Error: object 'gleeo_df' not found
+## Error: non-numeric argument to binary operator
 ```
 
 ```r
 
-projects <- group_by(x = gleeo, Project)
-```
-
-```
-## Error: object 'gleeo' not found
-```
-
-```r
+projects <- group_by(x = gleeo.df, Project)
 time <- summarize(projects, timetot = sum(Decimal.Duration))
-```
-
-```
-## Error: object 'projects' not found
-```
-
-```r
 arrange(time, desc(timetot))
 ```
 
 ```
-## Error: no applicable method for 'arrange' applied to an object of class
-## "function"
+## Source: local data frame [14 x 2]
+## 
+##     Project timetot
+## 1    thesis  56.817
+## 2  personal  56.100
+## 3   general  48.033
+## 4   saponin  45.433
+## 5   reading  40.117
+## 6  outreach  39.450
+## 7   meeting  32.583
+## 8   rhizpop  20.017
+## 9   hacking  15.683
+## 10 teaching  15.650
+## 11  seminar  14.083
+## 12  funding   8.883
+## 13 planning   7.400
+## 14    study   0.750
 ```
 
