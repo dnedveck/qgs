@@ -1,0 +1,67 @@
+Quantified Grad Student Analysis
+========================================================
+
+```{r, echo=FALSE}
+# setwd("~/Dropbox/proj/qgs/")
+```
+
+```{r}
+opts_chunk$set(tidy = FALSE, fig.height=4, cache=TRUE, cache.path="./.knitrcache_rep1/")
+options(stringsAsFactors=FALSE)
+```
+
+## Loading Packages
+```{r}
+suppressMessages(library(dplyr))
+suppressMessages(library(lubridate))
+```
+
+
+
+## import the data
+```{r}
+gleeo.df <- read.csv(file="2014-05-31_GleeoExport.csv")
+clock.df <- read.csv(file="2014-06-03_clocktime.csv")
+names(clock.df)[2] <- "in"
+```
+
+
+## Modify the data
+### adding week count to Gleeo
+I want to add in a week count, weeks start on Sunday. The reason for this is that I tend to think in week long work blocks.
+
+```{r}
+# saturday
+format(as.Date("2014-06-7"), "%U")
+# sunday
+format(as.Date("2014-06-8"), "%U")
+```
+So, apparently I can set something as a date, and then use te format function to get the week number. It seems that the week starts by default on a Sunday, so that's neat.
+
+since my times don't span over a day, I only need to worry about one of the dates in my `gleeo` data frame
+
+```{r}
+gleeo.df$week <- format(as.Date(gleeo.df$Start.Date), "%U")
+```
+
+### Day length in clocktime
+
+I want to add in two parts to clock time, the time that I was there in the day, and then later I'm going to calculate the "unaccounted for time", which is the total gleeo.duration in the day - the total clock time for the day. 
+
+### Personal Time
+I've got a lot of personal time tracked, and I don't really care how much time I spent taking naps, lunches, or breaks.... only that later it is going to play a role in how I will quantify how much time I tracked during the day, and how much I didn't = the time that I wasted and was not productive.
+
+
+
+
+## dicking around with dplyr
+
+```{r}
+gleeo_df <- tbl_df(gleeo.df)
+gleeo_df <- mutate(gleeo_df, 
+       hrDuration = Duration / 60)
+
+projects <- group_by(x=gleeo.df, Project)
+time <- summarize(projects, timetot = sum(Decimal.Duration))
+arrange(time, desc(timetot))
+```
