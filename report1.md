@@ -109,7 +109,7 @@ Turns out I had an extra week in the beginning, and then a couple days at the en
 
 
 ```r
-clock.df <- clock.df[ymd(clock.df$date) %in% ymd(gleeo.df$date), ]
+# clock.df <- clock.df[ymd(clock.df$date) %in% ymd(gleeo.df$date), ]
 ```
 
 
@@ -176,21 +176,165 @@ gleeo.df$taskinter <- interval(
 ## How much time do I invest in Grad School?
 
 
-
 ### how much time do I spend on campus, per day / week
   - this is the clock time
+
+Overall, what is the amount of time I spend on campus per day, let's look at this with a density plot:
+
+```r
+ggplot(clock.df, aes(x=campustime)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+```
+
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+
+```r
+
+summary(clock.df$campustime)
+```
+
+```
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    4.23    8.48    9.12    9.08    9.64   12.70
+```
+
+
+So, my average time spent on campus is 9.1hrs per day.
+
+Thinking about this, I expect there to be some structure to the times here, as I take a certain bus in, and then take a few possible busses back, so that would explain the lumps in the distribution.
+
+```r
+clock.df[which(clock.df$campustime <=5), ]
+```
+
+```
+##          date in_time out_time week day campustime
+## 52 2014-05-16 8:00:00 12:14:00   19 Fri      4.233
+```
+
+```r
+# row 47, 2014-05-16
+```
+
+
+The outlier on Friday is one day when I left early, I was there only  a half day (prelim season, just wanted to leave early). So that's going to skew results (variance in each day group) unless I don't take it out.
+
+
+```r
+clock.df<- filter(clock.df, date!= "2014-05-16" )
+ggplot(clock.df, aes(x=campustime)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white")+ 
+    geom_density(alpha=.3, fill="black")
+```
+
+![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
+
+
+
+For how much time I spend on campus per day, it might be interesting to look at the day (Monday - Sunday)
+
+
+```r
+clock.df %>% group_by(day) %>% summarize(daycampus = mean(campustime))
+```
+
+```
+## Source: local data frame [5 x 2]
+## 
+##     day daycampus
+## 1   Mon     9.170
+## 2  Tues     9.515
+## 3   Wed     8.749
+## 4 Thurs     9.738
+## 5   Fri     8.625
+```
+
+```r
+clock.df %>% group_by(day) %>% summarize(daycampus = sd(campustime))
+```
+
+```
+## Source: local data frame [5 x 2]
+## 
+##     day daycampus
+## 1   Mon    0.6864
+## 2  Tues    1.2480
+## 3   Wed    1.3023
+## 4 Thurs    1.1919
+## 5   Fri    0.8426
+```
+
+```r
+
+anova(lm(campustime ~ day, data=clock.df))
+```
+
+```
+## Analysis of Variance Table
+## 
+## Response: campustime
+##           Df Sum Sq Mean Sq F value Pr(>F)  
+## day        4   10.3    2.57    2.12  0.092 .
+## Residuals 50   60.5    1.21                 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+```
+
+```r
+# not a signifacnt effect of day on the amount of time I spend on campus, surprising.
+
+ggplot(clock.df, aes(x=day, y=campustime)) + 
+geom_point(shape=1)
+```
+
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-151.png) 
+
+```r
+
+ggplot(clock.df, aes(x=day, y=campustime)) + geom_boxplot() +
+    #stat_summary(fun.y=mean, geom="point", shape=5, size=4) + 
+    geom_point(aes(x=day, y=campustime), size=4, alpha=.5)
+```
+
+![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-152.png) 
+
+```r
+
+```
+
+
+  
+#### and now, per week
+
+Let's look at the distribution of the data:
+
+```r
+weekclock <- clock.df %>% group_by(week) %>% summarize(weekcampus = sum(campustime))
+ggplot(weekclock, aes(x=weekcampus)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=2.5, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+```
+
+![plot of chunk unnamed-chunk-16](figure/unnamed-chunk-16.png) 
+
+I guess I really don't have enough points to see an interesting distribution. Might be skewed to the left. 
+
 
 ```r
 qplot(x=day, y=campustime, data=clock.df, geom=c("boxplot", "point"), fill=day)
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-121.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-171.png) 
 
 ```r
 qplot(x=week, y=campustime, data=clock.df, geom=c( "point"))
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-122.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-172.png) 
 
 ```r
 
@@ -203,7 +347,7 @@ ggplot(clock.df, aes(x=week, y=campustime, group=1)) +
 ## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-123.png) 
+![plot of chunk unnamed-chunk-17](figure/unnamed-chunk-173.png) 
 
 
 How much time do I spend at campus per week?
@@ -214,7 +358,7 @@ weekcampus <- summarize(weekgroup, weektime = sum(campustime))
 qplot(week, weektime, data=weekcampus)
 ```
 
-![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
+![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18.png) 
 
 
 
@@ -232,10 +376,29 @@ ggplot(trackedtime, aes(x=week, y=prodtime, group=1)) +
 ## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
 ```
 
-![plot of chunk unnamed-chunk-14](figure/unnamed-chunk-14.png) 
+![plot of chunk unnamed-chunk-19](figure/unnamed-chunk-19.png) 
 
 
-Productive time per week?
+So the last graph shows that I roughly have the same spread or productive time, and that there is not a trend in weeks.... but I better check that statistically
+
+```r
+anova(lm(prodtime ~ week, data=trackedtime))
+```
+
+```
+## Analysis of Variance Table
+## 
+## Response: prodtime
+##           Df Sum Sq Mean Sq F value Pr(>F)
+## week      11     30    2.76     0.5   0.89
+## Residuals 58    317    5.47
+```
+
+Yep, no significant week effect.
+
+*but what about looking at the spread of my productivity times in each week? That could be interesting*
+
+Productive time per week? Is it a function of how much time I spend on campus?
 
 ```r
 gweekgroup <- group_by(x=trackedtime, week)
@@ -247,7 +410,7 @@ ggplot(catch, aes(x=campus, y=prod)) +
     geom_smooth(method=lm)   # Add linear regression line 
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15.png) 
+![plot of chunk unnamed-chunk-21](figure/unnamed-chunk-21.png) 
 
 ```r
                              #  (by default includes 95% confidence region)
