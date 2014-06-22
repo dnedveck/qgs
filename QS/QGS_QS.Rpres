@@ -81,7 +81,7 @@ library(ggplot2)
 library(lubridate)
 # go get data that I prepared in report1.Rmd, so I can load stuff already processed.
 
-
+setwd("~/Dropbox/proj/qgs/")
 ```
 
 

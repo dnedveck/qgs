@@ -1,7 +1,9 @@
 # knitr stuff
-./figure/*
-./.knitrcache*/*
-
+figure/*
+.knitrcache*/*
+*_cache
+.Rhistory
+*-figure/
 
 
 # Compiled source #
