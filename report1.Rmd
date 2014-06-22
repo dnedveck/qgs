@@ -6,14 +6,14 @@ Quantified Grad Student Analysis
 ```
 
 ```{r}
-opts_chunk$set(tidy = FALSE, fig.height=4, cache=TRUE, cache.path="./.knitrcache_rep1/")
+# opts_chunk$set(tidy = FALSE, fig.height=4, cache=TRUE)
 options(stringsAsFactors=FALSE)
 ```
 
 ## Loading Packages
-```{r}
-suppressMessages(library(dplyr))
-suppressMessages(library(lubridate))
+```{r, message=FALSE}
+library(dplyr)
+library(lubridate)
 library(ggplot2)
 ```
 
@@ -95,7 +95,7 @@ Turns out I had an extra week in the beginning, and then a couple days at the en
 Here I'm just going to generate a lot of values, and deal with organizing them at the end.
 
 ```{r}
-# Adding campustime
+# Calculating campustime
 clock.df$campustime <- interval(
          ymd_hms(paste(clock.df$date, clock.df$in_time)),
          ymd_hms(paste(clock.df$date, clock.df$out_time))
@@ -173,7 +173,7 @@ clock.df[which(clock.df$campustime <=5), ]
 The outlier on Friday is one day when I left early, I was there only  a half day (prelim season, just wanted to leave early). So that's going to skew results (variance in each day group) unless I don't take it out.
 
 ```{r}
-clock.df<- filter(clock.df, date!= "2014-05-16" )
+#clock.df<- filter(clock.df, date!= "2014-05-16" )
 ggplot(clock.df, aes(x=campustime)) + 
     geom_histogram(aes(y=..density..),
                    binwidth=.25, color="black", fill="white")+ 
@@ -181,7 +181,7 @@ ggplot(clock.df, aes(x=campustime)) +
 summary(clock.df$campustime)
 ```
 
-So, my average time spent on campus is 9.1hrs per day.
+So, my mean time spent on campus is 9.1hrs per day.
 
 
 For how much time I spend on campus per day, it might be interesting to look at the day (Monday - Sunday)
@@ -211,16 +211,17 @@ Let's look at the distribution of the data:
 weekclock <- clock.df %>% group_by(week) %>% summarize(weekcampus = sum(campustime))
 ggplot(weekclock, aes(x=weekcampus)) + 
     geom_histogram(aes(y=..density..),
-                   binwidth=2.5, color="black", fill="white") + 
+                   binwidth=2, color="black", fill="white") + 
     geom_density(alpha=.3, fill="black")
 ```
-I guess I really don't have enough points to see an interesting distribution. Might be skewed to the left. 
+I guess I really don't have enough points to see an interesting distribution. Might be skewed to the left, or bimodal. 
 
 Ok, what about a summary of the data
 ```{r}
 summary(weekclock$weekcampus)
 ```
 
+so, on average I spend `r summary(weekclock$weekcampus)[4]` hours on campus a week.
 
 
 
@@ -270,14 +271,14 @@ Yep, no significant week effect.
 
 Productive time per week? Is it a function of how much time I spend on campus?
 ```{r}
-gweekgroup <- group_by(x=trackedtime, week)
-prodweek <- summarize(gweekgroup, weekprodtime = sum(prodtime))
+# gweekgroup <- group_by(x=trackedtime, week)
+# prodweek <- summarize(gweekgroup, weekprodtime = sum(prodtime))
 
-catch <- data.frame(campus=weekcampus$weektime, prod=prodweek$weekprodtime  )
-ggplot(catch, aes(x=campus, y=prod)) +
-    geom_point(shape=1) +    # Use hollow circles
-    geom_smooth(method=lm)   # Add linear regression line 
-                             #  (by default includes 95% confidence region)
+# catch <- data.frame(campus=weekcampus$weektime, prod=prodweek$weekprodtime  )
+#ggplot(catch, aes(x=campus, y=prod)) +
+ #   geom_point(shape=1) +    # Use hollow circles
+  #  geom_smooth(method=lm)   # Add linear regression line 
+                             #  (by default includes 95% confidence region )
 ```
 
 
