@@ -1,6 +1,6 @@
 ---
 title: Quantified Grad Student Analysis
-
+ouput: html_document
 
 ---
 
@@ -43,7 +43,7 @@ In this analysis I am going to:
 
 ## import the data
 ```{r}
-gleeo.df <- read.csv(file="2014-05-31_GleeoExport.csv")
+gleeo.df <- read.csv(file="2014-05-31_GleeoExport.csv", dec=".")
 clock.df <- read.csv(file="2014-06-15_clocktime.csv")
 # Renaming gleeo.df$Start.Date as date for ease of use
 names(gleeo.df)[4] <- "date"
@@ -58,6 +58,7 @@ I want to add in a week count, weeks start on Sunday. The reason for this is tha
 ```{r}
 # saturday
 format(as.Date("2014-06-7"), "%U")
+week("2014-06-07")
 # sunday
 format(as.Date("2014-06-8"), "%U")
 ```
@@ -66,8 +67,12 @@ So, apparently I can set something as a date, and then use the format function t
 since my times don't span over a day, I only need to worry about one of the dates in my `gleeo` data frame
 
 ```{r}
-gleeo.df$week <- format(ymd(gleeo.df$date), "%U")
-clock.df$week <- format(ymd(clock.df$date), "%U")
+# non-lubridate method
+# gleeo.df$week <- format(ymd(gleeo.df$date), "%U")
+#clock.df$week <- format(ymd(clock.df$date), "%U")
+
+gleeo.df$week <- week(gleeo.df$date)
+clock.df$week <- week(clock.df$date)
 ```
 
 > I had the date in clocktime set as 3/3/2014, which is not the same as 2014-03-03, and hence `as.Date()` had issues with it. So I changed it in my google docs. Also it's nice to have clock and gleeo have the same date format.
@@ -78,13 +83,13 @@ Go Go Lubridate
 ### Adding the weekday to `gleeo.df` and `clock.df`
 
 ```{r}
-gleeo.df$day <- wday(ymd(gleeo.df$date), label=TRUE)
-clock.df$day <- wday(ymd(clock.df$date), label=TRUE)
+gleeo.df$day <- wday(gleeo.df$date, label=TRUE)
+clock.df$day <- wday(clock.df$date, label=TRUE)
 ```
 
 
-### Trimming extra days from the `clock.df`
-Turns out I had an extra week in the beginning, and then a couple days at the end. So I'm going to trim those dates in `clock.df` to only those that are tracked in `gleeo.df`
+### extra days from the `clock.df`
+Turns out I had an extra week in the beginning, and then a couple days at the end. So there's more days in clock.df than there is in gleeo.df
 
 ```{r}
 # clock.df <- clock.df[ymd(clock.df$date) %in% ymd(gleeo.df$date), ]
@@ -100,27 +105,6 @@ clock.df$campustime <- interval(
          ymd_hms(paste(clock.df$date, clock.df$in_time)),
          ymd_hms(paste(clock.df$date, clock.df$out_time))
          ) / ehours(1)
-```
-
-
-
-```{r}
-# Adding ctrackedtime
-# getting an interval for the time that I was at campus
-campusinter <- interval(
-         ymd_hms(paste(clock.df$date, clock.df$in_time)),
-         ymd_hms(paste(clock.df$date, clock.df$out_time)))
-gleeo.df$taskinter <- interval(
-         ymd_hm(paste(gleeo.df$date, gleeo.df$Start.Time)),
-         ymd_hm(paste(gleeo.df$date, gleeo.df$End.Time)))
-# finding which values fall in these intervals
-   # gleeo.df$taskinter %within% campusinter[1] 
-    # I'll have to revisit this ... I can think of a way to get this
-    # info, but it involves a lot of for loops
-
-# Adding lost time at campus (campus - tracked)
-
-
 ```
 
 ## How much time do I invest in Grad School?
@@ -252,7 +236,7 @@ ggplot(mftt, aes(x=prodtime)) +
 
 So the mean productive time per work day is `r summary(mftt$prodtime)[4]` hours.
 
-For furhter work I am going to only be looking at weekday prodtime
+For further work I am going to only be looking at weekday prodtime
 
 
 
@@ -283,7 +267,6 @@ ggplot(wtt, aes(x=wpt)) +
                    binwidth=.25, color="black", fill="white") + 
     geom_density(alpha=.3, fill="black")
 
-ggplot(wtt, aes(x=wpt)) + geom_histogram()
 ```
 
 Well, that distribution looks pretty crappy. More data will probably fill it in. 
@@ -291,47 +274,104 @@ Well, that distribution looks pretty crappy. More data will probably fill it in.
 
 #### Summary
 
-My mean productive time per work day is `r summary(mftt$prodtime)[4]` hours per day, and XX hours per week.
+My mean productive time per work day is `r summary(mftt$prodtime)[4]` hours per day, and `r summary(wtt$wpt)[4]` hours per week.
 
-
-
-## Efficiency
-use prodtime / campustime, correct for dates where I have campus time and not tracked time (extra clock.df days)
-
-
-
-
-```{r}
-ggplot(trackedtime, aes(x=week, y=prodtime, group=1)) +
-    geom_point(shape=1) +    # Use hollow circles
-    geom_smooth() 
-```
-
-So the last graph shows that I roughly have the same spread or productive time, and that there is not a trend in weeks.... but I better check that statistically
-```{r}
-anova(lm(prodtime ~ week, data=trackedtime))
-```
-Yep, no significant week effect.
-
-*but what about looking at the spread of my productivity times in each week? That could be interesting*
-
-Productive time per week? Is it a function of how much time I spend on campus?
-```{r}
-# gweekgroup <- group_by(x=trackedtime, week)
-# prodweek <- summarize(gweekgroup, weekprodtime = sum(prodtime))
-# 
-# catch <- data.frame(campus=weekcampus$weektime, prod=prodweek$weekprodtime  )
-# ggplot(catch, aes(x=campus, y=prod)) +
-#     geom_point(shape=1) +    # Use hollow circles
-#     geom_smooth(method=lm)   # Add linear regression line 
-                             #  (by default includes 95% confidence region )
-```
 
 
 
 ### What percent of time that I am on campus am I actually getting work done?
   - How efficient am I? (account for time worked not at campus)
+use prodtime / campustime, correct for dates where I have campus time and not tracked time (extra clock.df days)
 
 
-### At the end I want to see "How many hours do I work a week", so that has to be one output.
+
+Productive time per week? Is it a function of how much time I spend on campus?
+```{r}
+# pairing down clock.df into only those dates with tracked times
+clotrc.df <- clock.df[ ymd(clock.df$date) %in% ymd(gleeo.df$date), ]
+
+campusinterval <- data.frame(date = clotrc.df$date,
+                             inter = interval(
+         ymd_hms(paste(clotrc.df$date, clotrc.df$in_time)),
+         ymd_hms(paste(clotrc.df$date, clotrc.df$out_time))
+         ))
+
+# pair down the intervals so there is only those dates with tracked times
+campusinterval <- campusinterval[ymd(campusinterval$date) %in% ymd(gleeo.df$date), ]
+
+gleeo.inst <- data.frame(date= gleeo.df$date,
+                         inst= ymd_hm(paste(
+                             gleeo.df$date, gleeo.df$Start.Time)))
+
+# making a df that holds if the rows are in a campus interval
+rowBoolean.df <- data.frame(date= gleeo.inst$date)
+for(i in 1:length(campusinterval$inter)){
+    rowBoolean.df<- cbind(rowBoolean.df, gleeo.inst$inst %within% campusinterval$inter[i])
+}
+
+# populate a new df with only the rows that are in the campus interval
+    # grabbing the first iteration to make a df to catch the output
+cinterGleeo.df <- gleeo.df[rowBoolean.df[, 2], ]
+for(i in 3:length(names(rowBoolean.df))){
+   cinterGleeo.df <- rbind(cinterGleeo.df,
+                           gleeo.df[rowBoolean.df[, i], ])     
+}
+
+# calc tracked time using the new df
+catch <- cinterGleeo.df %>% group_by(date) %>% summarize(camptrc= sum(Decimal.Duration))
+
+clotrc.df$camptrc <- catch$camptrc
+
+# take the divisor
+clotrc.df$effper <- clotrc.df$camptrc / clotrc.df$campustime
+```
+
+Didn't use dplyr, but at least I got some values. Time to look at the distribution
+
+### Efficiency per day, M-F
+```{r}
+binaryweek <- as.numeric(clotrc.df$week) %% 2
+
+ggplot(clotrc.df, aes(x=date, y=effper, group=1, color=binaryweek)) + geom_line()
+```
+
+
+```{r}
+anova(lm(effper ~ day, clotrc.df))
+ggplot(clotrc.df, aes(x=day, y=effper)) + 
+    geom_violin()
+
+ggplot(clotrc.df, aes(x=day, y=effper, group= week, color= week)) + geom_line()
+```
+With that last graph I was trying to figure out a visualization for looking at if there is a trend as the week goes on
+
+### Efficiency per day, by week
+```{r}
+anova(lm(effper ~ week, clotrc.df))
+ggplot(clotrc.df, aes(x=week, y=effper, group=1)) + geom_point()
+```
+So there is a week affect according to a linear model
+
+```{r}
+week.grp <- clotrc.df %>% group_by(week) %>% summarize(aweff= mean(effper))
+ggplot(week.grp, aes(x=week, y=aweff, group=1)) + geom_line()
+```
+With that last graph I was trying to figure out a visualization for looking at how the trend changes per week
+
+
+## In summary
+- I spend a mean of `r summary(clock.df$campustime)[4]` hrs per day, and `r summary(weekclock$weekcampus)[4]` hrs per week at campus
+- My mean productive time per work day is `r summary(mftt$prodtime)[4]` hours per day, and `r summary(wtt$wpt)[4]` hours per week.
+
+## Saving useful Dataframes
+This makes work in other report a little more concise
+```{r}
+save(clock.df, file="rep1_clock.df.Rdata")
+save(gleeo.df, file="rep1_gleeo.df.Rdata")
+save(clotrc.df, file="rep1_trackedTimePerCampusInterval.df.Rdata")
+save(cinterGleeo.df, file="rep1_gleeoDataInCampusInterval.df.Rdata")
+save(trackedtime, file="rep1_trackedtimePerDate.df.Rdata")
+```
+
+
 

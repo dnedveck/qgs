@@ -1,10 +1,10 @@
-# knitr stuff
+# knitr and R stuff
 figure/*
 .knitrcache*/*
 *_cache
 .Rhistory
-*-figure/
-
+*_figure/
+*_files/
 
 # Compiled source #
 ###################

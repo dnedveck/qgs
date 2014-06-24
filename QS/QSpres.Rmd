@@ -1,24 +1,30 @@
-Quantified Grad Student
-========================================================
-author: Derek Nedveck 
-date: 6/24/14
+---
+title: "Quantified Grad Student"
+output: beamer_presentation
+author: "Derek Nedveck"
+date: "2014-06-24"
+---
 
-What I'm going to present
-=======================
+```{r, echo=FALSE}
+knitr::opts_chunk$set(tidy = FALSE, cache=TRUE)
+```
+
+
+# What I'm going to present
 - Intro - why did I do this
 - data collection - what kind of data did I gather
 - analysis
 - future directions - other questions?
 
 
-Motivation
-========================================================
+# Motivation
 - entering grad school - how much time do I need to invest
 - anecdotal: it will take all of your time
 
 But, who am I?
 ========================================
 Grad student in Plant Biology
+
 - Genomics (computational work), and local adaptation (field / greenhouse / lab work)
 - How do I compare to other Grad students?
  - I'm probably not very representative... but then what is a "normal" grad student?
@@ -32,51 +38,94 @@ Questions
  - What percent of time that I am on campus am I actually getting work done?
 
 
-Data Collection
-===============================
-Data collected
+# Data Collection
+
+## Tools
+
+- Android App: Gleeo
+- Google Spreadsheet on my phone
+
+## Data collected
+
 - Time doing work
 - Time I'm on campus
 
 
-Tools:
-- Android App: Gleeo
-- Google Spreadsheet on my phone
 
-But how do I split my time up?
-============================
+
+# But how do I split my time up?
+
 How many categories?
+
 - for a week, I tracked everything in a spreadsheet to get a sense of what I was doing
 - then, from that I tried to come up with categories to partition the tasks in the most meaningful way, with the least amount going into a "misc" bin
 - I'm still thinking about how best to partition my time, and am likely going to implement another scheme for the fall semester (starting September)
- 
-Tracked time breakdown
-=================================
-Tracked time as "Projects", with task subset
-Projects:
-- general; checking email, misc stuff, and admin work
-- reading; reading articles and books
-- seminar; sitting in department / research seminars
-- meeting; meeting for projects, meeting with people about my thesis
-- service; aka outreach
-- hacking; doing fun stuff that benefits my grad school work (time tracking work, work on my website, tooling around in Linux)
-- planning; capturing everything that I need to do GTD-style, and putting it in my calendar
+
+
 
 
 Categories, cont. 
 =================
 
-- funding; applying for funding, either for academic support, or research funding
-- thesis; work towards my thesis -- written prelims, oral exam, writing disseration, etc.
-- MtHap; my RA work -- genomics, also it pays the bills
-- rhizpop; main thesis work, this involved field, greenhouse, and lab work
-- TA; (in the future), TA prep, sitting in lecutre, and then office hours / student help
  
  
-Analysis
-========================
+# Analysis
+```{r, echo= FALSE, message= FALSE}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+# go get data that I prepared in report1.Rmd, so I can load stuff already processed.
+
+setwd("~/Dropbox/proj/qgs/")
+load(file = "rep1_clock.df.Rdata")
+load(file = "rep1_gleeo.df.Rdata")
+load(file= "rep1_trackedTimePerCampusInterval.df.Rdata")
+```
+
+# How long am I at campus?
+```{r, echo=FALSE, fig.height=6}
+ggplot(clock.df, aes(x=campustime)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black") + 
+    ggtitle("Amount of time I spend at campus per day")
+summary(clock.df$campustime)[c(1,4,6)]
+```
 
 
+# Grouped by weekday?
+
+```{r, echo=FALSE, fig.height=6}
+ggplot(clock.df, aes(x=day, y=campustime)) + geom_violin( fill = "dark gray")
+```
+
+
+# Time per week?
+```{r, echo=FALSE, fig.height=6}
+weekclock <- clock.df %>% group_by(week) %>% summarize(weekcampus = sum(campustime))
+
+ggplot(weekclock, aes(x=weekcampus)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=1, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+summary(weekclock$weekcampus)[c(1,4,6)]
+```
+
+# How efficient am I with the time that I am at campus?
+
+# In Summary
+
+I spend a mean of **`r summary(clock.df$campustime)[4]` hrs per day**, and **`r summary(weekclock$weekcampus)[4]` hrs per week** at campus
+
+Day:
+```{r, echo=FALSE}
+summary(clock.df$campustime)[c(1,4,6)]
+```
+
+Week:
+```{r, echo=FALSE}
+summary(weekclock$weekcampus)[c(1,4,6)]
+```
 
 
 Future work

@@ -1,3 +1,8 @@
+```{r, echo=FALSE}
+knitr::opts_chunk$set(tidy = FALSE, cache=TRUE)
+```
+
+
 Quantified Grad Student
 ========================================================
 author: Derek Nedveck 
@@ -53,7 +58,6 @@ How many categories?
 Tracked time breakdown
 =================================
 Tracked time as "Projects", with task subset
-Projects:
 - general; checking email, misc stuff, and admin work
 - reading; reading articles and books
 - seminar; sitting in department / research seminars
@@ -82,6 +86,55 @@ library(lubridate)
 # go get data that I prepared in report1.Rmd, so I can load stuff already processed.
 
 setwd("~/Dropbox/proj/qgs/")
+load(file = "rep1_clock.df.Rdata")
+load(file = "rep1_gleeo.df.Rdata")
+load(file= "rep1_trackedTimePerCampusInterval.df.Rdata")
+```
+
+How long am I at campus?
+============================
+```{r, echo=FALSE, fig.width=15}
+ggplot(clock.df, aes(x=campustime)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black") + 
+    ggtitle("Amount of time I spend at campus per day")
+summary(clock.df$campustime)[c(1,4,6)]
+```
+
+
+Grouped by weekday?
+===========================
+
+```{r, echo=FALSE, fig.width=15}
+ggplot(clock.df, aes(x=day, y=campustime)) + geom_violin( fill = "dark gray")
+```
+
+
+Week
+===========
+```{r, echo=FALSE, fig.width=15}
+weekclock <- clock.df %>% group_by(week) %>% summarize(weekcampus = sum(campustime))
+
+ggplot(weekclock, aes(x=weekcampus)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=1, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+summary(weekclock$weekcampus)[c(1,4,6)]
+```
+
+In Summary
+===================
+I spend a mean of **`r summary(clock.df$campustime)[4]` hrs per day**, and **`r summary(weekclock$weekcampus)[4]` hrs per week** at campus
+
+Day:
+```{r, echo=FALSE}
+summary(clock.df$campustime)[c(1,4,6)]
+```
+
+Week:
+```{r, echo=FALSE}
+summary(weekclock$weekcampus)[c(1,4,6)]
 ```
 
 
