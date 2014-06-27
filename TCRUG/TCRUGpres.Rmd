@@ -3,7 +3,7 @@ title: "Quantified Grad Student"
 author: "Derek Nedveck // nedveck@gmail.com"
 date: "6/26/2014"
 output: 
-    beamer_presentation:
+    ioslides_presentation:
         highlight: tango
 ---
 
@@ -128,24 +128,29 @@ summary(clock.df$campustime)[c(1,4,6)]
 ```
 
 
-# Grouped by weekday?
+# Grouped by weekday
 
 ```{r, echo=FALSE, fig.height=6}
 ggplot(clock.df, aes(x=day, y=campustime)) + geom_violin() + 
     geom_errorbar(stat = "hline", yintercept = "mean", width=0.3, aes(ymax= ..y.. , ymin= ..y.., ))
 ```
 
+# Time at campus varies over time
 
-# Time per week?
-```{r, echo=FALSE, fig.height=6}
+```{r}
+ggplot(clock.df, aes(x=date, y=campustime, group=week, color=week)  ) +
+    geom_line(size=2) + geom_point(color="black") + theme_bw() +
+    theme(axis.text.x = element_text(angle=90, hjust= 1))
+```
+
+
+# Time per week
+```{r}
 weekclock <- clock.df %>% group_by(week) %>% summarize(weekcampus = sum(campustime))
-
-ggplot(weekclock, aes(x=weekcampus)) + 
-    geom_histogram(aes(y=..density..),
-                   binwidth=1, color="black", fill="white") + 
-    geom_density(alpha=.3, fill="black")
+ggplot(weekclock, aes(x=week, y=weekcampus, group=1)) + geom_line()
 summary(weekclock$weekcampus)[c(1,4,6)]
 ```
+
 
 # Productive Time per day
 
@@ -171,7 +176,7 @@ ggplot(trackedtime, aes(x=day, y=prodtime)) +
 
 
 
-# How does Productive Time vary over time?
+# Productive Time varies over time
 ```{r}
 ggplot(trackedtime_MF, aes(x=date, y=prodtime, group=week, color=week)  ) +
     geom_line(size=2) + geom_point(color="black") + theme_bw() +
@@ -201,7 +206,7 @@ My solution isn't elegant...
     - for loop, and rbind
 
 
-# What is the distribution of my efficiency?
+# Distribution of my efficiency
 ```{r}
 ggplot(timeday.df, aes(x=efficiency)) +
     geom_histogram(aes(y=..density..),
@@ -211,7 +216,7 @@ summary(timeday.df$efficiency)[c(1,4,6)]
 ```
 
 
-# How does my efficiency vary over time?
+# Efficiency vary over time
 ```{r}
 ggplot(timeday.df, aes(x=date, y=efficiency, group=week, color=week )) +
     geom_line(size=2) + geom_point(color="black") + theme_bw() +
@@ -219,7 +224,7 @@ ggplot(timeday.df, aes(x=date, y=efficiency, group=week, color=week )) +
 ```
 
 
-# How does my efficiency vary by week?
+# Efficiency vary by week
 ```{r}
 ggplot(timeweek.df, aes(x=week, y=totwtrackedCampusInterval, group=1)) + geom_line()
 ```
@@ -268,7 +273,7 @@ Advisor says:
 # This is on GitHub
 https://github.com/dnedveck/qgs
 
-- `./qgs/TCRUG`
+- `./TCRUG/TCRUGpres.Rmd`
     - This presentation
 - `./*_GleeoExport.csv`
     - Time tracking data

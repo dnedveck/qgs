@@ -131,7 +131,7 @@ clock.df[which(clock.df$campustime <=5), ]
 # clock.df<- filter(clock.df, date!= "2014-05-16" )
 ```
 
-The outlier on Friday is one day when I left early, I was there only  a half day (prelim season, just wanted to leave early).
+The outlier on Friday is one day when I left early, I was there only a half day (prelim season, just wanted to leave early).
 
 ```{r}
 summary(clock.df$campustime)
