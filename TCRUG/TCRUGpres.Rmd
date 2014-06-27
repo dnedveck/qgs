@@ -3,7 +3,7 @@ title: "Quantified Grad Student"
 author: "Derek Nedveck // nedveck@gmail.com"
 date: "6/26/2014"
 output: 
-    ioslides_presentation:
+    beamer_presentation:
         highlight: tango
 ---
 
