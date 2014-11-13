@@ -1,0 +1,438 @@
+---
+title: Quantified Grad Student Analysis
+ouput: html_document
+
+---
+
+
+```{r, echo=FALSE}
+# setwd("~/Dropbox/proj/qgs/")
+```
+
+```{r setup, message=FALSE}
+knitr::opts_chunk$set(tidy = FALSE, fig.height=4, cache=TRUE)
+options(stringsAsFactors=FALSE)
+## Loading Packages
+require(dplyr)
+require(lubridate)
+require(ggplot2)
+```
+
+## Outline
+I'll be working with two datasets:
+
+- `clock`: which is when I come into campus, and when I leave
+- `gleeo`: which is the tracked time I spent on different tasks throughout each day
+
+In this analysis I am going to:
+
+1. load in the data
+ - add in a week count to gleeo and clock
+ - add the duration of campustime in clock
+
+2. Answer the question: *How much time do I invest in Grad School?*, which can be broken down into
+ - how much time do I spend on campus, per day / week  
+ - how much time am I working on grad school stuff, per day / week  
+ - What percent of time that I am on campus am I actually getting work done?
+  - How efficient am I? (account for time worked not at campus)
+ - At the end I want to see "How many hours do I work a week", so that has to be one output.
+ 
+ 
+ 
+
+
+## import the data
+```{r}
+gleeo.df <- read.csv(file="2014-05-31_GleeoExport.csv", dec=".")
+clock.df <- read.csv(file="2014-06-15_clocktime.csv")
+# Renaming gleeo.df$Start.Date as date for ease of use
+names(gleeo.df)[4] <- "date"
+
+```
+
+
+## Modify the data
+### adding week count to `gleeo.df` and `clock.df`
+I want to add in a week count, weeks start on Sunday. The reason for this is that I tend to think in week long work blocks.
+
+```{r}
+# saturday
+format(as.Date("2014-06-7"), "%U")
+week("2014-06-07")
+# sunday
+format(as.Date("2014-06-8"), "%U")
+```
+So, apparently I can set something as a date, and then use the format function to get the week number. It seems that the week starts by default on a Sunday, so that's neat.
+
+since my times don't span over a day, I only need to worry about one of the dates in my `gleeo` data frame
+
+```{r}
+# non-lubridate method
+# gleeo.df$week <- format(ymd(gleeo.df$date), "%U")
+#clock.df$week <- format(ymd(clock.df$date), "%U")
+
+gleeo.df$week <- week(gleeo.df$date)
+clock.df$week <- week(clock.df$date)
+```
+
+> I had the date in clocktime set as 3/3/2014, which is not the same as 2014-03-03, and hence `as.Date()` had issues with it. So I changed it in my google docs. Also it's nice to have clock and gleeo have the same date format.
+
+### Calculating time stuff
+Go Go Lubridate
+
+### Adding the weekday to `gleeo.df` and `clock.df`
+
+```{r}
+gleeo.df$day <- wday(gleeo.df$date, label=TRUE)
+clock.df$day <- wday(clock.df$date, label=TRUE)
+```
+
+
+### extra days from the `clock.df`
+Turns out I had an extra week in the beginning, and then a couple days at the end. So there's more days in clock.df than there is in gleeo.df
+
+```{r}
+# clock.df <- clock.df[ymd(clock.df$date) %in% ymd(gleeo.df$date), ]
+```
+
+### Getting Tracked time
+
+Here I'm just going to generate a lot of values, and deal with organizing them at the end.
+
+```{r}
+# Calculating campustime
+clock.df$campustime <- interval(
+         ymd_hms(paste(clock.df$date, clock.df$in_time)),
+         ymd_hms(paste(clock.df$date, clock.df$out_time))
+         ) / ehours(1)
+```
+
+## How much time do I invest in Grad School?
+
+
+### how much time do I spend on campus, per day / week
+
+Overall, what is the amount of time I spend on campus per day, let's look at this with a density plot:
+```{r}
+ggplot(clock.df, aes(x=campustime)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+
+
+```
+
+
+
+Thinking about this, I expect there to be some structure to the times here, as I take a certain bus in, and then take a few possible busses back, so that would explain the lumps in the distribution.
+```{r}
+clock.df[which(clock.df$campustime <=5), ]
+# row 47, 2014-05-16
+# clock.df<- filter(clock.df, date!= "2014-05-16" )
+```
+
+The outlier on Friday is one day when I left early, I was there only a half day (prelim season, just wanted to leave early).
+
+```{r}
+summary(clock.df$campustime)
+```
+
+So, my mean time spent on campus is `r summary(clock.df$campustime)[4]` hrs per day.
+
+
+For how much time I spend on campus per day, it might be interesting to look at the day (Monday - Sunday)
+
+```{r}
+clock.df %>% group_by(day) %>% summarize(daycampus = mean(campustime))
+clock.df %>% group_by(day) %>% summarize(daycampus = sd(campustime))
+
+anova(lm(campustime ~ day, data=clock.df))
+# marginally signifacnt effect of day on the amount of time I spend on campus, surprising.
+
+ggplot(clock.df, aes(x=day, y=campustime)) + geom_violin()
+```
+
+From the plots there's definitely some outliers on Tues and Wed potentially, and there's the half day on Friday coming in at around 4hrs.   
+
+
+#### and now, per week
+
+Let's look at the distribution of the data:
+```{r}
+weekclock <- clock.df %>% group_by(week) %>% summarize(weekcampus = sum(campustime))
+# is there a week effect?
+anova(lm(campustime ~ week, data=clock.df))
+# nope
+
+ggplot(weekclock, aes(x=weekcampus)) + 
+    geom_histogram(aes(y=..density..),
+                   binwidth=1, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+
+```
+I guess I really don't have enough points to see an interesting distribution. Maybe there's a bimodal distribution. When I get more data I can see if that is actualy the case (maybe I have productive weeks, and unproductive weeks, and no inbetween) 
+
+Ok, what about a summary of the data
+```{r}
+summary(weekclock$weekcampus)
+```
+
+so, on average I spend `r summary(weekclock$weekcampus)[4]` hours on campus a week.
+
+#### In summary
+I spend a mean of `r summary(clock.df$campustime)[4]` hrs per day, and `r summary(weekclock$weekcampus)[4]` hrs per week at campus
+
+
+
+
+
+### how much time am I working on grad school stuff, per day / week
+  - this is the gleeo tracked time
+  
+```{r}
+# Adding tracked time per day (trackedtime)
+gleeotime <- gleeo.df %>% group_by(date) %>% 
+    summarize(tottrackedtime = sum(Decimal.Duration))
+
+## adding time corrected for personal time
+projtimes <- gleeo.df %>% group_by(Project, date) %>%
+    summarize(totime = sum(Decimal.Duration))
+
+
+perstime <- projtimes[which(projtimes$Project == "personal"), 2:3]
+names(perstime)[2] <- "perstime"
+
+# left join keeps all the rows of x, not y
+trackedtime <- left_join(x=gleeotime, y=perstime, by="date")
+# missing values of perstime are NAs, need to be zeros for further work.
+trackedtime$perstime[is.na(trackedtime$perstime)] <- 0
+
+# prodtime, tracked time doing productive things
+trackedtime$prodtime <- trackedtime$tottrackedtime - trackedtime$perstime
+
+trackedtime$day <- wday(ymd(trackedtime$date), label=TRUE)
+trackedtime$week <- format(ymd(trackedtime$date), "%U")
+```
+
+Overall, how much productive time do I have per day?
+```{r}
+ggplot(trackedtime, aes(x=prodtime)) +
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+```
+Well, looks like my most common productive time is around 5 hours. The only thing is that this includes Saturday and Sunday. Let's remove those and look at what I have
+
+```{r}
+trackedtime_MF <- trackedtime %>% filter(day != "Sat", day != "Sun")
+summary(trackedtime_MF$prodtime)
+summary(trackedtime$prodtime)
+# mean is definitely different
+ggplot(trackedtime_MF, aes(x=prodtime)) +
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+```
+
+So the mean productive time per work day is `r summary(trackedtime_MF$prodtime)[4]` hours.
+
+For further work I am going to only be looking at weekday prodtime
+
+
+
+How does my prodtime look as a function of each day?
+```{r}
+anova(lm(prodtime ~ day, trackedtime_MF))
+ggplot(trackedtime, aes(x=day, y=prodtime)) + 
+    geom_violin()
+```
+
+Is my prodtime a function of week?
+```{r}
+anova(lm(prodtime ~ week, trackedtime_MF))
+ggplot(trackedtime, aes(x=week, y=prodtime)) + 
+    geom_violin()
+ggplot(trackedtime_MF, aes(x=week, y=prodtime)) + 
+    geom_violin()
+ggplot(trackedtime_MF, aes(x=week, y=prodtime)) + 
+    geom_line()
+```
+
+
+How much prodtime do I have per week?
+
+```{r}
+trackedtime_MF_week <- trackedtime_MF %>% group_by(week) %>% summarize(weekprodtime = sum(prodtime))
+summary(trackedtime_MF_week$weekprodtime)
+ggplot(trackedtime_MF_week, aes(x=weekprodtime)) +
+    geom_histogram(aes(y=..density..),
+                   binwidth=.25, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+
+binaryweek <- as.numeric(trackedtime_MF$week) %% 2
+
+ggplot(trackedtime_MF, aes(x=date, y=prodtime, group=1, color=as.factor(binaryweek) )) + geom_line()
+ggplot(trackedtime_MF, aes(x=date, y=prodtime, group=week, color=week) ) + geom_line()
+ggplot(trackedtime_MF_week, aes(x=week, y=weekprodtime, group=1)) + geom_line()
+```
+
+Well, that distribution looks pretty crappy. More data will probably fill it in. 
+
+
+#### Summary
+
+My mean productive time per work day is `r summary(trackedtime_MF$prodtime)[4]` hours per day, and `r summary(trackedtime_MF_week$weekprodtime)[4]` hours per week.
+
+
+
+
+### What percent of time that I am on campus am I actually getting work done?
+For this section I am going to calculate the amount of time that I am actually working while I am at campus. This is the amount of tracked time that falls within the interval when I am on campus. Then I am subtracting the amount of personal time per day. 
+```{r}
+# pairing down clock.df into only those dates with tracked times
+timeday.df <- clock.df[ ymd(clock.df$date) %in% ymd(gleeo.df$date), ]
+
+campusinterval <- data.frame(date = timeday.df$date,
+                             inter = interval(
+         ymd_hms(paste(timeday.df$date, timeday.df$in_time)),
+         ymd_hms(paste(timeday.df$date, timeday.df$out_time))
+         ))
+
+# pair down the intervals so there is only those dates with tracked times
+campusinterval <- campusinterval[ymd(campusinterval$date) %in% ymd(gleeo.df$date), ]
+
+gleeo.inst <- data.frame(date= gleeo.df$date,
+                         inst= ymd_hm(paste(
+                             gleeo.df$date, gleeo.df$Start.Time)))
+
+# making a df that holds if the rows are in a campus interval
+rowBoolean.df <- data.frame(date= gleeo.inst$date)
+for(i in 1:length(campusinterval$inter)){
+    rowBoolean.df<- cbind(rowBoolean.df, gleeo.inst$inst %within% campusinterval$inter[i])
+}
+
+# populate a new df with only the rows that are in the campus interval
+    # grabbing the first iteration to make a df to catch the output
+cinterGleeo.df <- gleeo.df[rowBoolean.df[, 2], ]
+for(i in 3:length(names(rowBoolean.df))){
+   cinterGleeo.df <- rbind(cinterGleeo.df,
+                           gleeo.df[rowBoolean.df[, i], ])     
+}
+
+# calc tracked time using the new df
+catch <- cinterGleeo.df %>% group_by(date) %>% summarize(trackedCampusInterval= sum(Decimal.Duration))
+
+timeday.df$trackedCampusInterval <- catch$trackedCampusInterval
+
+# let's add columns for the total tracked time, perstime, and prodtime from the 
+# trackedtime data.frame
+timeday.df <- left_join(timeday.df, trackedtime[1:4] )
+
+
+
+#  calculate efficiency, prodtime
+timeday.df$campusprodtime <- timeday.df$trackedCampusInterval-timeday.df$perstime
+timeday.df$efficiency <- (timeday.df$campusprodtime) / timeday.df$campustime
+```
+
+Didn't use dplyr, but at least I got some values. Time to look at the distribution
+### Distribution of Efficiency
+```{r}
+ggplot(timeday.df, aes(x=efficiency)) +
+    geom_histogram(aes(y=..density..),
+                   binwidth=.025, color="black", fill="white") + 
+    geom_density(alpha=.3, fill="black")
+summary(timeday.df$efficiency)[c(1,4,6)]
+```
+
+
+
+### Efficiency per day, M-F
+```{r}
+binaryweek <- as.numeric(timeday.df$week) %% 2
+
+ggplot(timeday.df, aes(x=date, y=efficiency, group=1, color=as.factor(binaryweek) )) + geom_line()
+ggplot(timeday.df, aes(x=date, y=efficiency, group=week, color=week )) +
+    geom_line(size=2) + geom_point(color="black") + theme_bw()
+ggplot(timeday.df, aes(x=date, y=efficiency)) + geom_point()
+```
+
+
+```{r}
+anova(lm(efficiency ~ day, timeday.df))
+ggplot(timeday.df, aes(x=day, y=efficiency)) + 
+    geom_violin()
+
+ggplot(timeday.df, aes(x=day, y=efficiency, group= week, color= week)) + geom_line()
+```
+
+With that last graph I was trying to figure out a visualization for looking at if there is a trend as the week goes on
+
+### Efficiency per day, by week
+```{r}
+anova(lm(efficiency ~ week, timeday.df))
+ggplot(timeday.df, aes(x=week, y=efficiency, group=1)) + geom_point()
+```
+
+So there is no week effect according to a linear model
+
+```{r}
+timeweek.df <- timeday.df %>% group_by(week) %>% summarize(aweff= mean(efficiency), totwtrackedCampusInterval = sum(timeday.df$campusprodtime))
+ggplot(timeweek.df, aes(x=week, y=aweff, group=1)) + geom_line()
+ggplot(timeweek.df, aes(x=week, y=totwtrackedCampusInterval, group=1)) + geom_line()
+```
+
+With that last graph I was trying to figure out a visualization for looking at how the trend changes per week
+
+
+#### In Summary
+The average amount of time that I work during the time I am at campus is `r summary((timeday.df$campusprodtime))[4]` hours per day, and `r summary(timeweek.df$totwtrackedCampusInterval)[4]` hours per week
+
+## Relationships
+
+### Productive time in the day for how much time I am at campus
+This is looking at if the amount of stuff I get done during the day is affected by the amount of time I am on campus. Pretty much this is going to be looking at if I am at campus for a really long time, does the amount of work that I actually get done taper off.
+
+```{r}
+ggplot(timeday.df, aes(x=campustime, y=prodtime)) + geom_point()
+anova(lm(prodtime ~ campustime, data=timeday.df))
+```
+
+### Productive time at campus for how much time I am at campus
+
+```{r}
+ggplot(timeday.df, aes(x=campustime, y=campusprodtime)) + geom_point()
+anova(lm(campusprodtime ~ campustime, data=timeday.df))
+```
+
+### Efficiency for how much time I am at campus
+```{r}
+ggplot(timeday.df, aes(x=campustime, y=efficiency)) + geom_point()
+anova(lm(efficiency ~ campustime, data=timeday.df))
+```
+
+
+
+### Amount of productive time given personal time?
+```{r}
+ggplot(timeday.df, aes(x=perstime, y=campusprodtime)) + geom_point()
+anova(lm(campusprodtime ~ perstime, data=timeday.df))
+```
+
+## In summary
+- I spend a mean of `r summary(clock.df$campustime)[4]` hrs per day, and `r summary(weekclock$weekcampus)[4]` hrs per week at campus
+- My mean productive time per work day is `r summary(trackedtime_MF$prodtime)[4]` hours per day, and `r summary(trackedtime_MF_week$weekprodtime)[4]` hours per week. Only considering my at campus times 
+
+
+## Saving useful Dataframes
+This makes work in other report a little more concise
+```{r}
+save(clock.df, file="rep1_clock.df.Rdata")
+save(gleeo.df, file="rep1_gleeo.df.Rdata")
+save(timeday.df, file="rep1_timeday.df.Rdata")
+save(cinterGleeo.df, file="rep1_cinterGleeo.df.Rdata")
+save(trackedtime, file="rep1_trackedtime.df.Rdata")
+```
+
+
+
