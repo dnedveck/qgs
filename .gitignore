@@ -5,6 +5,7 @@ figure/*
 .Rhistory
 *_figure/
 *_files/
+*.RData
 
 # Compiled source #
 ###################
