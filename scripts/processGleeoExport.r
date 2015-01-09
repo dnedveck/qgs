@@ -83,7 +83,7 @@ day.df <- merge(day.df, campusPers, by = "date")
 
 
 # calculate efficiency
-day.df$efficiency <- (day.df$campusTask - day.df$campusPers) / day.df$campusTime
+day.df$efficiency <- day.df$campusTask / (day.df$campusTime - day.df$campusPers)
 
 # adding in the week, day, month to day.df
  # need to specify the package since data.table has same functions
