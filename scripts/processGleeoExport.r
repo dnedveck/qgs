@@ -5,10 +5,11 @@ library(data.table)
 library(dplyr)
 library(lubridate)
 
+options(stringsAsFactors=FALSE)
+
+
 
 setwd("~/Dropbox/proj/qgs/data/phase2/")
-
-options(stringsAsFactors=FALSE)
 
 # load in the data
 
@@ -66,8 +67,23 @@ camptime <- campus.df %>% group_by(date) %>%
     summarize(campusTime = sum(Decimal.Duration))
 day.df <- merge(day.df, camptime, by = "date")
 
+# finding the amount of personal time per day to correct campus time with
+perstime <- gleeo.df %>% filter(Project == "personal")
+# have to do the same thing to make sure I'm looking at personal time at campus
+pers.dt <- setDT(perstime)
+pers.dt[, `:=`(start = as.POSIXct(paste(Start.Date, Start.Time)),
+               end = as.POSIXct(paste(End.Date, End.Time)))]
+ovrlps <- !is.na(
+    foverlaps(x = pers.dt, y= campus.dt, type= "any", which= TRUE)$yid
+)
+
+campusPers <- pers.dt[ovrlps] %>% group_by(date) %>%
+    summarize(campusPers = sum(Decimal.Duration))
+day.df <- merge(day.df, campusPers, by = "date")
+
+
 # calculate efficiency
-day.df$efficiency <- day.df$campusTask / day.df$campusTime
+day.df$efficiency <- (day.df$campusTask - day.df$campusPers) / day.df$campusTime
 
 # adding in the week, day, month to day.df
  # need to specify the package since data.table has same functions

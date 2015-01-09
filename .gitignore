@@ -6,6 +6,7 @@ figure/*
 *_figure/
 *_files/
 *.RData
+*.Rproj
 
 # Compiled source #
 ###################
