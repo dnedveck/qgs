@@ -1,6 +1,6 @@
 # Phase 2 Time Tracking Categories
 
-
+Phase: 9/2/2014 - 1/11/15
 
 Starting 9/2/2014 I'm using a new partitioning schema for my time. Specifically I want to look at how my time goes into
 - How much time am I actually doing research?
