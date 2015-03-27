@@ -36,6 +36,7 @@ campus.df <- gleeo.df %>% filter(Project == "meta", Task == "campustime")
  # making a df of only the task times
 task.df <- gleeo.df %>% filter(Project != "meta", Project != "personal")
 
+##########################
 # using data.table to do the interval searching
  # see: stackoverflow.com/questions/27725034/
 
@@ -56,6 +57,7 @@ setkey(campus.df, start, end)
 ovrlps <- !is.na(
     foverlaps(x = task.dt, y= campus.dt, type= "any", which= TRUE)$yid
 )
+#################
 
 # totaling this time as campusTask
 campusTask <- task.df[ovrlps] %>% group_by(date) %>%
