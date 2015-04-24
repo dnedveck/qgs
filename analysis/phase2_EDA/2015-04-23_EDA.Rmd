@@ -28,7 +28,7 @@ Checking to make sure that the efficiency looks right
 ```{r}
 ggplot(day.df, aes( efficiency)) + 
   geom_histogram() +
-  lab(title = "Efficiency per day")
+  labs(title = "Efficiency per day")
 ```
 
 
