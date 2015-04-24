@@ -1,3 +1,8 @@
+# ignoring project specific stuff
+ # don't need html in the analysis, can regen from .rmd
+analysis/*.html
+
+
 # knitr and R stuff
 figure/*
 .knitrcache*/*
