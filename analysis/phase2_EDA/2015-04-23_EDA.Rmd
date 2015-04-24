@@ -1,0 +1,51 @@
+---
+title: "EDA"
+author: "Derek Nedveck"
+date: "04/23/2015"
+output: html_document
+---
+
+doing some EDA with the gleeodata 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+Loading in the data that I processed with `processGleeoExport.r` 
+
+```{r}
+load("2015-04-23_day.df.RData")
+load("2015-04-23_gleeo.df.RData")
+```
+
+## QC
+
+doing some quick QC to make sure my data is as expected
+
+Checking to make sure that the efficiency looks right
+```{r}
+ggplot(day.df, aes( efficiency)) + 
+  geom_histogram() +
+  lab(title = "Efficiency per day")
+```
+
+
+
+## Plots
+
+Looking at amount of time worked, per time at campus
+... looks like I need to convert this data into a long format tbl_df
+```{r}
+daytime.df <- gather(data = day.df, type, time, 2:5 )
+```
+
+
+```{r}
+daytime.df %>% filter(type == "campusTask" | type == "campusTime") %>%
+  ggplot( aes(x = date, y = time, group = type)) + 
+  geom_line()
+```
+
+
